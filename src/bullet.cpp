@@ -84,8 +84,8 @@ Bullet::Bullet(float x, float y, color_t color,float rotation) {
     };
     this->bounding_box.x=this->position.x;
     this->bounding_box.y=this->position.z;
-    this->bounding_box.width=2.0;
-    this->bounding_box.height=2.0;
+    this->bounding_box.width=1.0;
+    this->bounding_box.height=1.0;
     this->object = create3DObject(GL_TRIANGLES, 24*3, vertex_buffer_data, color, GL_FILL);
 }
 

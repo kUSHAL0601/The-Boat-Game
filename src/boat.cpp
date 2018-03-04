@@ -184,7 +184,7 @@ Boat::Boat(float x, float y, float z) {
     this->bounding_box.x=this->position.x;
     this->bounding_box.y=this->position.z;
     this->bounding_box.width=3.0f;
-    this->bounding_box.height=16.0f;
+    this->bounding_box.height=12.0f;
 }
 
 void Boat::draw(glm::mat4 VP) {

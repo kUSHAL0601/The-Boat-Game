@@ -6,7 +6,8 @@
 #include "time.h"
 #include "bullet.h"
 #include "unistd.h"
-
+#include "monster.h"
+#include "monster_bullet.h"
 using namespace std;
 
 GLMatrices Matrices;
@@ -17,19 +18,19 @@ GLFWwindow *window;
 * Customizable functions *
 **************************/
 
-Ball ball1;
-//Ball ball2;
 Water water;
 Boat boat;
-//Ball stones[50][50];
 vector <Ball> stones;
+vector <Monster> monsters;
 int boat_move=0;
 int move_flag=0;
 int wind_count=0;
 int global_count=0;
 vector <Bullet> bullet;
+vector <MBullet> m_bullet;
 color_t COLOR_SKY={26,208,248};
 color_t COLOR_STONE={128,128,128};
+int m_fire_count=0;
 
 float screen_zoom = 0.25, screen_center_x = 0, screen_center_y = 0;
 
@@ -126,6 +127,10 @@ void draw() {
           stones[i].draw(VP);
     for(int i=0;i<bullet.size();i++)
         bullet[i].draw(VP);
+    for(int i=0;i<monsters.size();i++)
+        monsters[i].draw(VP);
+    for(int i=0;i<m_bullet.size();i++)
+        m_bullet[i].draw(VP);
     boat.draw(VP);
     water.draw(VP);
 }
@@ -243,6 +248,53 @@ void tick_elements() {
             i--;
         }
     }
+    for(int i=0;i<monsters.size();i++)
+    {
+        float mx=monsters[i].position.x;
+        float mz=monsters[i].position.z;
+        float bx=boat.position.x;
+        float bz=boat.position.z;
+        if((mx-bx)*(mx-bx)+(mz-bz)*(mz-bz)<=2500)
+        {
+            if(mz>bz)
+                monsters[i].rotation=-1.0*(atan((bx-mx)/(mz-bz))*180.0f/M_PI);
+            else
+                monsters[i].rotation=180+(-1.0*(atan((bx-mx)/(mz-bz))*180.0f/M_PI));
+            if(m_fire_count==0)
+            {
+                m_bullet.push_back(MBullet(monsters[i].position.x,monsters[i].position.z,COLOR_GREEN,monsters[i].rotation));
+            }
+            m_fire_count++;
+            if(m_fire_count>=40)
+                m_fire_count=0;
+//            printf("%f\n",monsters[i].rotation);
+        }
+        for(int j=0;j<bullet.size();j++)
+        {
+            if(detect_collision(monsters[i].bounding_box,bullet[j].bounding_box))
+            {
+                monsters.erase(monsters.begin()+i);
+                score+=5;
+                i--;
+            }
+        }
+    }
+    for(int i=0;i<m_bullet.size();i++)
+    {
+        m_bullet[i].position.x+=m_bullet[i].factor*0.3*sin(m_bullet[i].rotation * M_PI / 180.0f);
+        m_bullet[i].position.z+=m_bullet[i].factor*0.3*cos(m_bullet[i].rotation * M_PI / 180.0f);
+        if(m_bullet[i].position.x<=m_bullet[i].initx-100 || m_bullet[i].position.z<=m_bullet[i].initz-100 || m_bullet[i].position.z>=m_bullet[i].initz+100 || m_bullet[i].position.x>=m_bullet[i].initx+100)
+        {
+            m_bullet.erase(m_bullet.begin()+ i);
+            i--;
+        }
+        if(detect_collision(m_bullet[i].bounding_box,boat.bounding_box))
+        {
+            health-=0.005;
+            m_bullet.erase(m_bullet.begin()+ i);
+            i--;
+        }
+    }
 }
 
 /* Initialize the OpenGL rendering properties */
@@ -272,8 +324,23 @@ void initGL(GLFWwindow *window, int width, int height) {
             stones.push_back(Ball(((float)20*i+(float)(rand()/(float)(RAND_MAX/20.0f))-10.0f)*factorx,((float)20*j+(float)(rand()/(float)(RAND_MAX/20.0f))-10.0f)*factory,COLOR_STONE));
         }
     }
-    water       = Water(0, 0, 0);
-
+    for(int i=1;i<=10;i++)
+    {
+        for(int j=1;j<=10;j++)
+        {
+            float factorx,factory;
+            if(i%2==0)
+                factorx=-1.0f;
+            else
+                factorx=1.0f;
+            if(j%2==0)
+                factory=-1.0f;
+            else
+                factory=1.0f;
+            monsters.push_back(Monster(((float)100*i+(float)(rand()/(float)(RAND_MAX/100.0f))-50.0f)*factorx,((float)100*j+(float)(rand()/(float)(RAND_MAX/100.0f))-50.0f)*factory,COLOR_BLACK));
+        }
+    }
+    water = Water(0, 0, 0);
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("Sample_GL.vert", "Sample_GL.frag");
     // Get a handle for our "MVP" uniform
