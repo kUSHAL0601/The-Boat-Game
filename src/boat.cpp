@@ -181,6 +181,10 @@ Boat::Boat(float x, float y, float z) {
     this->object = create3DObject(GL_TRIANGLES, 12*3, vertex_buffer_data, COLOR_MAIN, GL_FILL);
     this->object1 = create3DObject(GL_TRIANGLES, 10*3, pyramids, COLOR_MAIN, GL_FILL);
     this->object2 = create3DObject(GL_TRIANGLES, 24*3, canons, COLOR_CANON, GL_FILL);
+    this->bounding_box.x=this->position.x;
+    this->bounding_box.y=this->position.z;
+    this->bounding_box.width=3.0f;
+    this->bounding_box.height=16.0f;
 }
 
 void Boat::draw(glm::mat4 VP) {
@@ -194,6 +198,8 @@ void Boat::draw(glm::mat4 VP) {
     draw3DObject(this->object2);
     draw3DObject(this->object);
     draw3DObject(this->object1);
+    this->bounding_box.x=this->position.x;
+    this->bounding_box.y=this->position.z;
 }
 
 void Boat::set_position(float x, float y,float z) {

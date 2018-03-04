@@ -4,6 +4,8 @@
 #include "water.h"
 #include "boat.h"
 #include "time.h"
+#include "bullet.h"
+#include "unistd.h"
 
 using namespace std;
 
@@ -19,12 +21,13 @@ Ball ball1;
 //Ball ball2;
 Water water;
 Boat boat;
-Ball stones[50][50];
+//Ball stones[50][50];
+vector <Ball> stones;
 int boat_move=0;
 int move_flag=0;
 int wind_count=0;
 int global_count=0;
-
+vector <Bullet> bullet;
 color_t COLOR_SKY={26,208,248};
 color_t COLOR_STONE={128,128,128};
 
@@ -34,6 +37,9 @@ int perspective=0;
 float perspective_angle=90.0;
 float eyex,eyey,eyez,targetx,targety,targetz,upx,upy,upz;
 int view_count=1;
+int max_bullets=50;
+float health=100.0;
+int score=0;
 
 Timer t60(1.0 / 60);
 
@@ -116,9 +122,10 @@ void draw() {
     // Scene render
 //    ball1.draw(VP);
 //    ball2.draw(VP);
-    for(int i=0;i<50;i++)
-        for(int j=0;j<50;j++)
-            stones[i][j].draw(VP);
+    for(int i=0;i<stones.size();i++)
+          stones[i].draw(VP);
+    for(int i=0;i<bullet.size();i++)
+        bullet[i].draw(VP);
     boat.draw(VP);
     water.draw(VP);
 }
@@ -132,6 +139,7 @@ void tick_input(GLFWwindow *window) {
     int view2 = glfwGetKey(window,GLFW_KEY_2);
     int view3 = glfwGetKey(window,GLFW_KEY_3);
     int view4 = glfwGetKey(window,GLFW_KEY_4);
+    int fire = glfwGetKey(window,GLFW_KEY_F);
     if (left) {
         boat_move=0;
         boat.rotation+=1.0;
@@ -189,11 +197,15 @@ void tick_input(GLFWwindow *window) {
     {
         view_count=4;
     }
+    if(fire && bullet.size()<max_bullets)
+    {
+        bullet.push_back(Bullet(boat.position.x,boat.position.z,COLOR_RED,boat.rotation));
+    }
 }
 
 void tick_elements() {
 //    ball1.tick();
-//    boat.tick(boat_move);
+    boat.tick(boat_move);
     move_flag=0;
     if(wind_count==500)
         wind_count=0;
@@ -203,14 +215,32 @@ void tick_elements() {
         boat.position.z+=0.05*sin(boat.rotation * M_PI / 180.0f)*(float)(500-wind_count)/500.0f;
         wind_count++;
     }
-    for(int i=0;i<50;i++)
+    for(int i=0;i<stones.size();i++)
     {
-        for(int j=0;j<50;j++)
-        {
-            if(detect_collision_bs(i,j))
+            if(detect_collision(boat.bounding_box,stones[i].bounding_box))
             {
-                move_flag=1;
+//                printf("Collided\n");
+                health-=0.05;
+//                printf("%f\n",health);
             }
+            for(int j=0;j<bullet.size();j++)
+            {
+                if(detect_collision(stones[i].bounding_box,bullet[j].bounding_box))
+                {
+                    stones.erase(stones.begin()+i);
+                    score+=1;
+                    i--;
+                }
+            }
+    }
+    for(int i=0;i<bullet.size();i++)
+    {
+        bullet[i].position.x+=0.3*sin(bullet[i].rotation * M_PI / 180.0f);
+        bullet[i].position.z+=0.3*cos(bullet[i].rotation * M_PI / 180.0f);
+        if(bullet[i].position.x<=boat.position.x-100 || bullet[i].position.z<=boat.position.z-100 || bullet[i].position.z>=boat.position.z+100 || bullet[i].position.x>=boat.position.x+100)
+        {
+            bullet.erase(bullet.begin()+ i);
+            i--;
         }
     }
 }
@@ -239,7 +269,7 @@ void initGL(GLFWwindow *window, int width, int height) {
                 factory=-1.0f;
             else
                 factory=1.0f;
-            stones[i-1][j-1]=Ball(((float)20*i+(float)(rand()/(float)(RAND_MAX/20.0f))-10.0f)*factorx,((float)20*j+(float)(rand()/(float)(RAND_MAX/20.0f))-10.0f)*factory,COLOR_STONE);
+            stones.push_back(Ball(((float)20*i+(float)(rand()/(float)(RAND_MAX/20.0f))-10.0f)*factorx,((float)20*j+(float)(rand()/(float)(RAND_MAX/20.0f))-10.0f)*factory,COLOR_STONE));
         }
     }
     water       = Water(0, 0, 0);
@@ -280,6 +310,11 @@ int main(int argc, char **argv) {
         // Process timers
 
         if (t60.processTick()) {
+            if(health<=0)
+            {
+                sleep(1);
+                quit(window);
+            }
             // 60 fps
             // OpenGL Draw commands
             global_count++;
@@ -291,6 +326,10 @@ int main(int argc, char **argv) {
             draw();
             // Swap Frame Buffer in double buffering
             glfwSwapBuffers(window);
+
+            char hlt[501]={};
+            sprintf(hlt,"Health %f        Score %d",health,score);
+            glfwSetWindowTitle(window,hlt);
 
             tick_elements();
             tick_input(window);
@@ -306,13 +345,6 @@ int main(int argc, char **argv) {
 bool detect_collision(bounding_box_t a, bounding_box_t b) {
     return (abs(a.x - b.x) * 2 < (a.width + b.width)) &&
            (abs(a.y - b.y) * 2 < (a.height + b.height));
-}
-bool detect_collision_bs(int i,int j)
-{
-    bounding_box_t b=stones[i][j].bounding_box;
-    return (abs(boat.position.x - b.x) * 2 < (3.0*sin(boat.rotation * M_PI / 180.0f) + b.width)) &&
-           (abs(boat.position.z - b.y) * 2 < (8.0*cos(boat.rotation * M_PI / 180.0f) + b.height));
-
 }
 
 void reset_screen() {
