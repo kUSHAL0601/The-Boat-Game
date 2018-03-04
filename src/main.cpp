@@ -8,6 +8,10 @@
 #include "unistd.h"
 #include "monster.h"
 #include "monster_bullet.h"
+#include "gift.h"
+#include "health_gift.h"
+#include "man.h"
+
 using namespace std;
 
 GLMatrices Matrices;
@@ -20,6 +24,9 @@ GLFWwindow *window;
 
 Water water;
 Boat boat;
+HGift gift;
+Man man;
+
 vector <Ball> stones;
 vector <Monster> monsters;
 int boat_move=0;
@@ -31,8 +38,11 @@ vector <MBullet> m_bullet;
 color_t COLOR_SKY={26,208,248};
 color_t COLOR_STONE={128,128,128};
 int m_fire_count=0;
-
+vector <Gift> stars;
+vector <HGift> hstars;
 float screen_zoom = 0.25, screen_center_x = 0, screen_center_y = 0;
+float nitro=5.0;
+int nitro_on=0;
 
 int perspective=0;
 float perspective_angle=90.0;
@@ -41,7 +51,8 @@ int view_count=1;
 int max_bullets=50;
 float health=100.0;
 int score=0;
-
+int count_star=0;
+int count_hstar=0;
 Timer t60(1.0 / 60);
 
 /* Render the scene with openGL */
@@ -131,7 +142,12 @@ void draw() {
         monsters[i].draw(VP);
     for(int i=0;i<m_bullet.size();i++)
         m_bullet[i].draw(VP);
-    boat.draw(VP);
+    for(int i=0;i<stars.size();i++)
+        stars[i].draw(VP);
+    for(int i=0;i<hstars.size();i++)
+        hstars[i].draw(VP);
+    boat.draw(VP,nitro_on);
+    man.draw(VP);
     water.draw(VP);
 }
 
@@ -145,30 +161,57 @@ void tick_input(GLFWwindow *window) {
     int view3 = glfwGetKey(window,GLFW_KEY_3);
     int view4 = glfwGetKey(window,GLFW_KEY_4);
     int fire = glfwGetKey(window,GLFW_KEY_F);
+    int ntro = glfwGetKey(window,GLFW_KEY_N);
+    int ntroff = glfwGetKey(window,GLFW_KEY_B);
+    if(ntro)
+    {
+        nitro_on=1;
+    }
+    if(ntroff)
+    {
+        nitro_on=0;
+    }
     if (left) {
         boat_move=0;
         boat.rotation+=1.0;
+        man.rotation+=1.0;
         // Do something
     }
     else if(right)
     {
         boat_move=0;
         boat.rotation-=1.0;
+        man.rotation-=1.0;
     }
     if(up && move_flag==0)
     {
         boat_move=1;
         float speed=0.1;
+        if(nitro_on==1 && nitro>=0.05)
+        {
+            speed=1.0;
+            nitro-=0.05;
+        }
+        else
+            nitro_on=0;
         boat.position.x+=speed*sin(boat.rotation * M_PI / 180.0f);
         boat.position.z+=speed*cos(boat.rotation * M_PI / 180.0f);
+        man.set_position(boat.position.x,boat.position.y,boat.position.z);
     }
     else if(down && move_flag==0)
     {
         boat_move=1;
-
         float speed=-0.1;
+        if(nitro_on==1 && nitro>=0.05)
+        {
+            nitro-=0.05;
+            speed=-0.03;
+        }
+        else
+            nitro_on=0;
         boat.position.x+=speed*sin(boat.rotation * M_PI / 180.0f);
         boat.position.z+=speed*cos(boat.rotation * M_PI / 180.0f);
+        man.set_position(boat.position.x,boat.position.y,boat.position.z);
     }
     else
     {
@@ -203,22 +246,68 @@ void tick_input(GLFWwindow *window) {
         view_count=4;
     }
     if(fire && bullet.size()<max_bullets)
+
     {
         bullet.push_back(Bullet(boat.position.x,boat.position.z,COLOR_RED,boat.rotation));
     }
 }
 
 void tick_elements() {
-//    ball1.tick();
+    gift.tick();
     boat.tick(boat_move);
+    man.tick(boat_move);
     move_flag=0;
+    for(int i=0;i<stars.size();i++)
+    {
+        stars[i].tick();
+    }
+    for(int i=0;i<hstars.size();i++)
+    {
+        hstars[i].tick();
+    }
     if(wind_count==500)
         wind_count=0;
     if(wind_count!=0)
     {
         boat.position.x+=0.05*cos(boat.rotation * M_PI / 180.0f)*(float)(500-wind_count)/500.0f;
         boat.position.z+=0.05*sin(boat.rotation * M_PI / 180.0f)*(float)(500-wind_count)/500.0f;
+        man.set_position(boat.position.x,boat.position.y,boat.position.z);
         wind_count++;
+    }
+    for(int i=0;i<stars.size();i++)
+    {
+        if(detect_collision_powerup(stars[i].bounding_box))
+        {
+            if(count_star==700)
+            {
+                nitro+=5.0;
+                stars.erase(stars.begin()+i);
+                i--;
+                count_star=0;
+            }
+            else
+                count_star++;
+        }
+    }
+    for(int i=0;i<hstars.size();i++)
+    {
+        if(detect_collision_powerup(hstars[i].bounding_box))
+        {
+            if(count_hstar==700)
+            {
+                hstars.erase(hstars.begin()+i);
+                i--;
+                if(health<=99.5)
+                    health+=0.5f;
+                else
+                    health=100.0f;
+                count_hstar=0;
+            }
+            else
+            {
+                count_hstar++;
+            }
+        }
     }
     for(int i=0;i<stones.size();i++)
     {
@@ -254,7 +343,7 @@ void tick_elements() {
         float mz=monsters[i].position.z;
         float bx=boat.position.x;
         float bz=boat.position.z;
-        if((mx-bx)*(mx-bx)+(mz-bz)*(mz-bz)<=2500)
+        if((mx-bx)*(mx-bx)+(mz-bz)*(mz-bz)<=10000)
         {
             if(mz>bz)
                 monsters[i].rotation=-1.0*(atan((bx-mx)/(mz-bz))*180.0f/M_PI);
@@ -290,7 +379,7 @@ void tick_elements() {
         }
         if(detect_collision(m_bullet[i].bounding_box,boat.bounding_box))
         {
-            health-=0.005;
+            health-=0.01;
             m_bullet.erase(m_bullet.begin()+ i);
             i--;
         }
@@ -306,6 +395,7 @@ void initGL(GLFWwindow *window, int width, int height) {
 
 //    ball1       = Ball(0, 0, COLOR_GREEN);
     boat=Boat(0,0,0);
+    man=Man(boat.position.x,boat.position.y,boat.position.z);
     boat.speed=0;
 //    ball2       = Ball(-5, -5, COLOR_RED);
     for(int i=1;i<=50;i++)
@@ -338,6 +428,8 @@ void initGL(GLFWwindow *window, int width, int height) {
             else
                 factory=1.0f;
             monsters.push_back(Monster(((float)100*i+(float)(rand()/(float)(RAND_MAX/100.0f))-50.0f)*factorx,((float)100*j+(float)(rand()/(float)(RAND_MAX/100.0f))-50.0f)*factory,COLOR_BLACK));
+            stars.push_back(Gift(((float)100*i+(float)(rand()/(float)(RAND_MAX/100.0f))-50.0f)*factorx+10.0,((float)100*j+(float)(rand()/(float)(RAND_MAX/100.0f))-50.0f)*factory+15.0));
+            hstars.push_back(HGift(((float)100*i+(float)(rand()/(float)(RAND_MAX/100.0f))-50.0f)*factorx+20.0,((float)100*j+(float)(rand()/(float)(RAND_MAX/100.0f))-50.0f)*factory+30.0));
         }
     }
     water = Water(0, 0, 0);
@@ -395,7 +487,7 @@ int main(int argc, char **argv) {
             glfwSwapBuffers(window);
 
             char hlt[501]={};
-            sprintf(hlt,"Health %f        Score %d",health,score);
+            sprintf(hlt,"Health %f        Score %d       Nitro %f",health,score,nitro);
             glfwSetWindowTitle(window,hlt);
 
             tick_elements();
@@ -412,6 +504,10 @@ int main(int argc, char **argv) {
 bool detect_collision(bounding_box_t a, bounding_box_t b) {
     return (abs(a.x - b.x) * 2 < (a.width + b.width)) &&
            (abs(a.y - b.y) * 2 < (a.height + b.height));
+}
+bool detect_collision_powerup(bounding_box_t a) {
+    return (abs(a.x - boat.position.x) * 2 < (a.width + 3.0)) &&
+           (abs(a.y - boat.position.y) * 2 < (a.height + 2.0));
 }
 
 void reset_screen() {
