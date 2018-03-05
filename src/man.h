@@ -16,6 +16,8 @@ public:
     bounding_box_t bounding_box;
     void tick(int move);
     double speed;
+    double speedy;
+    void translate(int man_move);
     int flag;
 private:
     VAO *object;

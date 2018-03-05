@@ -19,7 +19,6 @@ struct color_t {
     int g;
     int b;
 };
-
 // nonedit.cpp
 GLFWwindow *initGLFW(int width, int height);
 GLuint     LoadShaders(const char *vertex_file_path, const char *fragment_file_path);
@@ -76,6 +75,8 @@ bool detect_collision_powerup(bounding_box_t a);
 
 extern float screen_zoom, screen_center_x, screen_center_y;
 void reset_screen();
+void height_change(float ht);
+void rotation_change(float rot);
 
 // ---- Colors ----
 extern const color_t COLOR_RED;

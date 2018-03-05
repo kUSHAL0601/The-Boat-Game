@@ -11,6 +11,8 @@
 #include "gift.h"
 #include "health_gift.h"
 #include "man.h"
+//#include "target.h"
+#include "island.h"
 
 using namespace std;
 
@@ -26,10 +28,13 @@ Water water;
 Boat boat;
 HGift gift;
 Man man;
+Island island;
+//Target cross_hair;
 
 vector <Ball> stones;
 vector <Monster> monsters;
 int boat_move=0;
+int man_to_move=0;
 int move_flag=0;
 int wind_count=0;
 int global_count=0;
@@ -53,7 +58,27 @@ float health=100.0;
 int score=0;
 int count_star=0;
 int count_hstar=0;
+float rot_init;
+float hght_init;
 Timer t60(1.0 / 60);
+
+float area(int x1, int y1, int x2, int y2, int x3, int y3)
+{
+   return abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0);
+}
+
+bool isInside(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y)
+{
+   float A = area (x1, y1, x2, y2, x3, y3);
+
+   float A1 = area (x, y, x2, y2, x3, y3);
+
+   float A2 = area (x1, y1, x, y, x3, y3);
+
+   float A3 = area (x1, y1, x2, y2, x, y);
+
+   return (A == A1 + A2 + A3);
+}
 
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
@@ -67,20 +92,39 @@ void draw() {
 
     if(view_count==1)
     {
-        eyex=boat.position.x;
-        eyey=15.0f;
-        eyez=boat.position.z;
-        targetx=boat.position.x;
-        targety=boat.position.y;
-        targetz=boat.position.z;
-        upx=0;
-        upy=0;
-        upz=1;
-        perspective=0;
-        reset_screen();
+        if(man_to_move==0)
+        {
+            eyex=boat.position.x;
+            eyey=15.0f;
+            eyez=boat.position.z;
+            targetx=boat.position.x;
+            targety=boat.position.y;
+            targetz=boat.position.z;
+            upx=0;
+            upy=0;
+            upz=1;
+            perspective=0;
+            reset_screen();
+        }
+        else
+        {
+            eyex=man.position.x;
+            eyey=30.0f;
+            eyez=man.position.z;
+            targetx=man.position.x;
+            targety=man.position.y;
+            targetz=man.position.z;
+            upx=0;
+            upy=0;
+            upz=1;
+            perspective=0;
+            reset_screen();
+        }
     }
     else if(view_count==2)
     {
+        if(man_to_move==0)
+        {
         eyex=boat.position.x+5.0*sin(boat.rotation * M_PI / 180.0f);
         eyey=boat.position.y+2.3;
         eyez=boat.position.z+(5.0f*cos(boat.rotation * M_PI / 180.0f));
@@ -93,9 +137,27 @@ void draw() {
         perspective=1;
         perspective_angle=90.0f;
         reset_screen();
+        }
+        else
+        {
+            eyex=man.position.x+5.0*sin(man.rotation * M_PI / 180.0f);
+            eyey=man.position.y+2.3;
+            eyez=man.position.z+(5.0f*cos(man.rotation * M_PI / 180.0f));
+            targetx=man.position.x+8.0*sin(man.rotation * M_PI / 180.0f);
+            targety=man.position.y;
+            targetz=man.position.z+(8.0f*cos(man.rotation * M_PI / 180.0f));
+            upx=0;
+            upy=1;
+            upz=0;
+            perspective=1;
+            perspective_angle=90.0f;
+            reset_screen();
+        }
     }
     else if(view_count==4)
     {
+        if(man_to_move==0)
+        {
         eyex=boat.position.x-10.0*sin(boat.rotation * M_PI / 180.0f);
         eyey=boat.position.y+2.3;
         eyez=boat.position.z-(10.0f*cos(boat.rotation * M_PI / 180.0f));
@@ -108,6 +170,55 @@ void draw() {
         perspective=1;
         perspective_angle=90.0f;
         reset_screen();
+        }
+        else
+        {
+            eyex=man.position.x-10.0*sin(man.rotation * M_PI / 180.0f);
+            eyey=man.position.y+2.3;
+            eyez=man.position.z-(10.0f*cos(man.rotation * M_PI / 180.0f));
+            targetx=man.position.x;
+            targety=man.position.y;
+            targetz=man.position.z;
+            upx=0;
+            upy=1;
+            upz=0;
+            perspective=1;
+            perspective_angle=90.0f;
+            reset_screen();
+        }
+    }
+    if(view_count==5)
+    {
+        if(man_to_move==0)
+        {
+        eyex=boat.position.x-10.0*sin(rot_init * M_PI / 180.0f);
+        eyey=hght_init;
+        eyez=boat.position.z-(10.0f*cos(rot_init * M_PI / 180.0f));
+        targetx=boat.position.x;
+        targety=boat.position.y;
+        targetz=boat.position.z;
+        upx=0;
+        upy=1;
+        upz=0;
+        perspective=1;
+        perspective_angle=90.0f;
+        reset_screen();
+        }
+        else
+        {
+            eyex=man.position.x-10.0*sin(rot_init * M_PI / 180.0f);
+            eyey=hght_init;
+            eyez=man.position.z-(10.0f*cos(rot_init * M_PI / 180.0f));
+            targetx=man.position.x;
+            targety=man.position.y;
+            targetz=man.position.z;
+            upx=0;
+            upy=1;
+            upz=0;
+            perspective=1;
+            perspective_angle=90.0f;
+            reset_screen();
+        }
     }
 
     // Eye - Location of camera. Don't change unless you are sure!!
@@ -149,6 +260,19 @@ void draw() {
     boat.draw(VP,nitro_on);
     man.draw(VP);
     water.draw(VP);
+    double mouse_x,mouse_y;
+    glfwGetCursorPos(window,&mouse_x,&mouse_y);
+    if(perspective==1)
+    {
+        double posx=boat.position.x - 4 + mouse_x/75.0f;
+        posx*=-1.0f;
+        double posy=boat.position.y - 4 + mouse_y/75.0f;
+        posy*=-1.0f;
+//        cross_hair.set_position(posx,posy,boat.position);
+//        cross_hair.rotation=boat.rotation;
+//        cross_hair.draw(VP,boat.position);
+    }
+    island.draw(VP);
 }
 
 void tick_input(GLFWwindow *window) {
@@ -160,9 +284,25 @@ void tick_input(GLFWwindow *window) {
     int view2 = glfwGetKey(window,GLFW_KEY_2);
     int view3 = glfwGetKey(window,GLFW_KEY_3);
     int view4 = glfwGetKey(window,GLFW_KEY_4);
+    int view5 = glfwGetKey(window,GLFW_KEY_5);
     int fire = glfwGetKey(window,GLFW_KEY_F);
+    int get_off = glfwGetKey(window,GLFW_KEY_J);
+    int enter = glfwGetKey(window,GLFW_KEY_H);
     int ntro = glfwGetKey(window,GLFW_KEY_N);
     int ntroff = glfwGetKey(window,GLFW_KEY_B);
+    int jump = glfwGetKey(window,GLFW_KEY_SPACE);
+    if(get_off)
+    {
+        man_to_move=1;
+        man.translate(man_to_move);
+    }
+    if(enter)
+    {
+        man_to_move=0;
+        man.set_position(boat.position.x,boat.position.y,boat.position.z);
+        man.rotation=boat.rotation;
+        man.translate(man_to_move);
+    }
     if(ntro)
     {
         nitro_on=1;
@@ -172,19 +312,47 @@ void tick_input(GLFWwindow *window) {
         nitro_on=0;
     }
     if (left) {
+        if(man_to_move==0)
+        {
         boat_move=0;
         boat.rotation+=1.0;
         man.rotation+=1.0;
+        }
+        else
+        {
+            boat_move=0;
+            man.rotation+=1.0;
+        }
         // Do something
     }
     else if(right)
     {
+        if(man_to_move==0)
+        {
         boat_move=0;
         boat.rotation-=1.0;
         man.rotation-=1.0;
+        }
+        else
+        {
+            boat_move=0;
+            man.rotation-=1.0;
+        }
+    }
+    if(jump)
+    {
+        if(man_to_move==0)
+        {
+        boat.position.y+=0.35;
+        boat.speedy=-0.05;
+        }
+        man.position.y+=0.35;
+        man.speedy=-0.05;
     }
     if(up && move_flag==0)
     {
+        if(man_to_move==0)
+        {
         boat_move=1;
         float speed=0.1;
         if(nitro_on==1 && nitro>=0.05)
@@ -197,9 +365,20 @@ void tick_input(GLFWwindow *window) {
         boat.position.x+=speed*sin(boat.rotation * M_PI / 180.0f);
         boat.position.z+=speed*cos(boat.rotation * M_PI / 180.0f);
         man.set_position(boat.position.x,boat.position.y,boat.position.z);
+        }
+        else
+        {
+            float speed=0.1;
+            man.position.x+=speed*sin(man.rotation * M_PI / 180.0f);
+            man.position.z+=speed*cos(man.rotation * M_PI / 180.0f);
+            if(isInside(island.position.x-16.0f,island.position.z-16.0*tan(M_PI/6.0),island.position.x+16.0f,island.position.z-16.0*tan(M_PI/6.0),island.position.x+0.0f,island.position.z+32.0*cos(M_PI/6.0)-16.0*tan(M_PI/6.0),man.position.x,man.position.z));
+                man.position.y+=0.5;
+        }
     }
     else if(down && move_flag==0)
     {
+        if(man_to_move==0)
+        {
         boat_move=1;
         float speed=-0.1;
         if(nitro_on==1 && nitro>=0.05)
@@ -212,6 +391,15 @@ void tick_input(GLFWwindow *window) {
         boat.position.x+=speed*sin(boat.rotation * M_PI / 180.0f);
         boat.position.z+=speed*cos(boat.rotation * M_PI / 180.0f);
         man.set_position(boat.position.x,boat.position.y,boat.position.z);
+        }
+        else
+        {
+            float speed=-0.1;
+            man.position.x+=speed*sin(man.rotation * M_PI / 180.0f);
+            man.position.z+=speed*cos(man.rotation * M_PI / 180.0f);
+            if(isInside(-16.0f,-16.0*tan(M_PI/6.0),16.0f,-16.0*tan(M_PI/6.0),0.0f,32.0*cos(M_PI/6.0)-16.0*tan(M_PI/6.0),man.position.x,man.position.z));
+                man.position.y-=0.5;
+        }
     }
     else
     {
@@ -227,6 +415,8 @@ void tick_input(GLFWwindow *window) {
     }
     else if(view3)
     {
+        if(man_to_move==0)
+        {
         view_count=3;
         eyex=boat.position.x;
         eyey=boat.position.y+15.0f;
@@ -240,20 +430,63 @@ void tick_input(GLFWwindow *window) {
         perspective=45;
         reset_screen();
         draw();
+        }
+        else
+        {
+            view_count=3;
+            eyex=man.position.x;
+            eyey=man.position.y+15.0f;
+            eyez=man.position.z-5.0f;
+            targetx=man.position.x;
+            targety=man.position.y;
+            targetz=man.position.z;
+            upx=0;
+            upy=1;
+            upz=1;
+            perspective=45;
+            reset_screen();
+            draw();
+        }
     }
     else if(view4)
     {
         view_count=4;
     }
-    if(fire && bullet.size()<max_bullets)
-
+    else if(view5)
     {
-        bullet.push_back(Bullet(boat.position.x,boat.position.z,COLOR_RED,boat.rotation));
+        if(man_to_move==0)
+        {
+        view_count=5;
+        rot_init=boat.rotation;
+        hght_init=boat.position.z+10;
+        }
+        else
+        {
+            view_count=5;
+            rot_init=man.rotation;
+            hght_init=man.position.z+15;
+        }
+    }
+    if(fire && bullet.size()<max_bullets)
+    {
+        if(man_to_move==0)
+            bullet.push_back(Bullet(boat.position.x,boat.position.z,COLOR_RED,boat.rotation));
+        else
+            bullet.push_back(Bullet(man.position.x,man.position.z,COLOR_RED,man.rotation));
     }
 }
 
 void tick_elements() {
+    if(detect_collision(island.bounding_box,man.bounding_box)&&man.position.y>=10.0)
+    {
+        score+=100;
+        island.position.x*=-1;
+        island.position.z*=-1;
+//        sleep(2);
+//        quit(window);
+    }
     gift.tick();
+    island.tick();
     boat.tick(boat_move);
     man.tick(boat_move);
     move_flag=0;
@@ -271,7 +504,8 @@ void tick_elements() {
     {
         boat.position.x+=0.05*cos(boat.rotation * M_PI / 180.0f)*(float)(500-wind_count)/500.0f;
         boat.position.z+=0.05*sin(boat.rotation * M_PI / 180.0f)*(float)(500-wind_count)/500.0f;
-        man.set_position(boat.position.x,boat.position.y,boat.position.z);
+        if(man_to_move==0)
+            man.set_position(boat.position.x,boat.position.y,boat.position.z);
         wind_count++;
     }
     for(int i=0;i<stars.size();i++)
@@ -390,10 +624,17 @@ void tick_elements() {
 /* Add all the models to be created here */
 void initGL(GLFWwindow *window, int width, int height) {
     srand((unsigned int)time(NULL));
+    island=Island(500,500,COLOR_GREEN);
     /* Objects should be created before any other gl function and shaders */
     // Create the models
 
 //    ball1       = Ball(0, 0, COLOR_GREEN);
+    double mouse_x,mouse_y;
+    glfwGetCursorPos(window,&mouse_x,&mouse_y);
+    double posx=boat.position.x - 4 + mouse_x/75.0f;
+    double posy=boat.position.x - 4 + mouse_y/75.0f;
+//    cross_hair=Target(posx,posy,COLOR_RED);
+
     boat=Boat(0,0,0);
     man=Man(boat.position.x,boat.position.y,boat.position.z);
     boat.speed=0;
@@ -519,4 +760,16 @@ void reset_screen() {
         Matrices.projection = glm::ortho(left, right, bottom, top, 0.1f, 500.0f);
     else
         Matrices.projection = glm::perspective (perspective_angle, (GLfloat) top / (GLfloat) right, 0.1f, 500.0f);
+}
+void height_change(float ht)
+{
+    if(view_count==5)
+        hght_init+=ht;
+    if(hght_init<1.0 && ht<0)
+        hght_init-=ht;
+}
+void rotation_change(float rot)
+{
+    if(view_count==5)
+        rot_init+=rot;
 }
