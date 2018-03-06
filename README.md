@@ -22,7 +22,7 @@ Controls and Rules
    3. It is camera at the tower
    4. It is as if you are following the boat.
    5. It is a free watch, control it using your trackpad, however you want.
-+ The monster-king is near the island.
++ The monster-king is near the island, he takes many bullets to die.
 + Gravity doesn't apply to you.
 + There are two types of gifts, stars which give you points and nitro and hearts which give you health. You need to stay on them for about 3s to take them. You have to be with boat to collect the points.
 
