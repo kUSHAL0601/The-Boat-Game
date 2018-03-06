@@ -25,7 +25,7 @@ Controls and Rules
 + The monster-king is near the island, he takes many bullets to die.
 + Gravity doesn't apply to you.
 + There are two types of gifts, stars which give you points and nitro and hearts which give you health. You need to stay on them for about 3s to take them. You have to be with boat to collect the points.
-
++ Initially you are given some nitro.
 
 NOTE:EXECUTABLE AVAILABLE IN BUILD FOLDER AS the_boat_game
 ------------------------------------------------------------
