@@ -48,7 +48,7 @@ int m_fire_count=0;
 vector <Gift> stars;
 vector <HGift> hstars;
 float screen_zoom = 0.25, screen_center_x = 0, screen_center_y = 0;
-float nitro=0.0;
+float nitro=5.0;
 int nitro_on=0;
 
 int perspective=0;
