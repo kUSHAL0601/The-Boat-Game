@@ -13,6 +13,7 @@
 #include "man.h"
 //#include "target.h"
 #include "island.h"
+#include "monster_master.h"
 
 using namespace std;
 
@@ -33,6 +34,7 @@ Island island;
 
 vector <Ball> stones;
 vector <Monster> monsters;
+vector <MMonster> m_monster;
 int boat_move=0;
 int man_to_move=0;
 int move_flag=0;
@@ -46,7 +48,7 @@ int m_fire_count=0;
 vector <Gift> stars;
 vector <HGift> hstars;
 float screen_zoom = 0.25, screen_center_x = 0, screen_center_y = 0;
-float nitro=5.0;
+float nitro=0.0;
 int nitro_on=0;
 
 int perspective=0;
@@ -251,6 +253,8 @@ void draw() {
         bullet[i].draw(VP);
     for(int i=0;i<monsters.size();i++)
         monsters[i].draw(VP);
+    for(int i=0;i<m_monster.size();i++)
+        m_monster[i].draw(VP);
     for(int i=0;i<m_bullet.size();i++)
         m_bullet[i].draw(VP);
     for(int i=0;i<stars.size();i++)
@@ -482,6 +486,7 @@ void tick_elements() {
         score+=100;
         island.position.x*=-1;
         island.position.z*=-1;
+        m_monster.push_back(MMonster(island.position.x-25,island.position.z-25,COLOR_BLACK));
 //        sleep(2);
 //        quit(window);
     }
@@ -618,6 +623,42 @@ void tick_elements() {
             i--;
         }
     }
+    for(int i=0;i<m_monster.size();i++)
+    {
+        float mx=m_monster[i].position.x;
+        float mz=m_monster[i].position.z;
+        float bx=boat.position.x;
+        float bz=boat.position.z;
+        if((mx-bx)*(mx-bx)+(mz-bz)*(mz-bz)<=8000)
+        {
+            if(mz>bz)
+                m_monster[i].rotation=-1.0*(atan((bx-mx)/(mz-bz))*180.0f/M_PI);
+            else
+                m_monster[i].rotation=180+(-1.0*(atan((bx-mx)/(mz-bz))*180.0f/M_PI));
+            if(m_fire_count==0)
+            {
+                m_bullet.push_back(MBullet(m_monster[i].position.x,m_monster[i].position.z,COLOR_GREEN,m_monster[i].rotation));
+            }
+            m_fire_count++;
+            if(m_fire_count>=30)
+                m_fire_count=0;
+//            printf("%f\n",monsters[i].rotation);
+        }
+        for(int j=0;j<bullet.size();j++)
+        {
+            if(detect_collision(m_monster[i].bounding_box,bullet[j].bounding_box))
+            {
+                m_monster[i].health-=0.1;
+                if(m_monster[i].health<2.0)
+                {
+                m_monster.erase(m_monster.begin()+i);
+                score+=50;
+                i--;
+                }
+            }
+        }
+    }
+
 }
 
 /* Initialize the OpenGL rendering properties */
@@ -625,6 +666,7 @@ void tick_elements() {
 void initGL(GLFWwindow *window, int width, int height) {
     srand((unsigned int)time(NULL));
     island=Island(500,500,COLOR_GREEN);
+    m_monster.push_back(MMonster(island.position.x-25,island.position.z-25,COLOR_BLACK));
     /* Objects should be created before any other gl function and shaders */
     // Create the models
 

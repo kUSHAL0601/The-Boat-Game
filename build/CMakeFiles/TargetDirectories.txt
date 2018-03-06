@@ -1,0 +1,3 @@
+/home/kushal/20161075_Assignment2/build/CMakeFiles/edit_cache.dir
+/home/kushal/20161075_Assignment2/build/CMakeFiles/rebuild_cache.dir
+/home/kushal/20161075_Assignment2/build/CMakeFiles/the_boat_game.dir

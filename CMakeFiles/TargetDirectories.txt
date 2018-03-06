@@ -1,3 +1,0 @@
-/home/kushal/GA2/CMakeFiles/edit_cache.dir
-/home/kushal/GA2/CMakeFiles/rebuild_cache.dir
-/home/kushal/GA2/CMakeFiles/GA2.dir
