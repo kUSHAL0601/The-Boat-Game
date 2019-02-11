@@ -1,0 +1,24 @@
+Detecting C [-std=c11] compiler features failed to compile with the following output:
+Change Dir: /media/user/PU$#T!/ParrotSec_LIVE/The-Boat-Game/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_33f6d/fast"
+/usr/bin/make -f CMakeFiles/cmTC_33f6d.dir/build.make CMakeFiles/cmTC_33f6d.dir/build
+make[1]: Entering directory '/media/user/PU$#T!/ParrotSec_LIVE/The-Boat-Game/build/CMakeFiles/CMakeTmp'
+make[1]: *** No rule to make target '/media/user/PUT!/ParrotSec_LIVE/The-Boat-Game/build/CMakeFiles/feature_tests.c', needed by 'CMakeFiles/cmTC_33f6d.dir/feature_tests.c.o'.  Stop.
+make[1]: Leaving directory '/media/user/PU$#T!/ParrotSec_LIVE/The-Boat-Game/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_33f6d/fast] Error 2
+
+
+
+Detecting CXX [-std=c++2a] compiler features failed to compile with the following output:
+Change Dir: /media/user/PU$#T!/ParrotSec_LIVE/The-Boat-Game/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_ed569/fast"
+/usr/bin/make -f CMakeFiles/cmTC_ed569.dir/build.make CMakeFiles/cmTC_ed569.dir/build
+make[1]: Entering directory '/media/user/PU$#T!/ParrotSec_LIVE/The-Boat-Game/build/CMakeFiles/CMakeTmp'
+make[1]: *** No rule to make target '/media/user/PUT!/ParrotSec_LIVE/The-Boat-Game/build/CMakeFiles/feature_tests.cxx', needed by 'CMakeFiles/cmTC_ed569.dir/feature_tests.cxx.o'.  Stop.
+make[1]: Leaving directory '/media/user/PU$#T!/ParrotSec_LIVE/The-Boat-Game/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_ed569/fast] Error 2
+
+
+
